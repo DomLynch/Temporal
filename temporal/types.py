@@ -219,14 +219,22 @@ class SearchResults:
 
 @dataclass
 class RetainResult:
-    """Result of episode ingestion."""
+    """Result of episode ingestion.
+
+    Counter semantics:
+    - entities_extracted: total entities found by LLM in this episode
+    - entities_resolved: count that were merged into existing canonicals (dedup)
+    - relations_extracted: total relations found by LLM in this episode
+    - relations_resolved: count that reused an existing canonical (duplicate reuse)
+    - relations_invalidated: count of old relations marked invalid (contradiction)
+    """
     success: bool = True
     episode_id: str = ""
     entities_extracted: int = 0
-    entities_resolved: int = 0      # Merged with existing
+    entities_resolved: int = 0      # Merged into existing canonical entities
     relations_extracted: int = 0
-    relations_resolved: int = 0     # Duplicates/contradictions handled
-    relations_invalidated: int = 0  # Old facts marked invalid
+    relations_resolved: int = 0     # Reused existing canonical relations (duplicates)
+    relations_invalidated: int = 0  # Old relations marked with invalid_at (contradictions)
     token_usage: dict[str, int] = field(default_factory=lambda: {
         "input_tokens": 0,
         "output_tokens": 0,

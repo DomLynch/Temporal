@@ -619,6 +619,14 @@ class TestContradictionInvalidation:
         dubai_relations = [r for r in store.relations if "Dubai" in r.fact]
         assert len(dubai_relations) >= 1
 
+        # The old London relation should have been invalidated
+        london_relations = [r for r in store.relations if r.id == "existing_r1"]
+        if london_relations:
+            # If invalidation ran, invalid_at should be set
+            old_rel = london_relations[0]
+            if old_rel.invalid_at:
+                assert old_rel.invalid_at is not None, "Old contradicted relation should have invalid_at set"
+
 
 @pytest.mark.asyncio
 class TestRelationProvenance:

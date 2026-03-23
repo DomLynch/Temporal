@@ -189,7 +189,7 @@ class SQLiteTemporalStore:
             rows = conn.execute(
                 """SELECT * FROM episodes WHERE group_id = ? AND reference_time < ?
                    ORDER BY reference_time DESC LIMIT ?""",
-                (group_id, before, limit),
+                (group_id, _normalize_ts(before), limit),
             ).fetchall()
         else:
             rows = conn.execute(
@@ -305,7 +305,8 @@ class SQLiteTemporalStore:
                  rel.target_entity_name, rel.name, rel.fact,
                  json.dumps(rel.fact_embedding or []),
                  json.dumps(rel.episode_ids), json.dumps(rel.attributes),
-                 rel.valid_at, rel.invalid_at, rel.expired_at,
+                 _normalize_ts(rel.valid_at), _normalize_ts(rel.invalid_at),
+                 _normalize_ts(rel.expired_at),
                  rel.created_at),
             )
         conn.commit()
@@ -415,10 +416,10 @@ class SQLiteTemporalStore:
 
         if filters and filters.valid_at_start:
             sql += " AND valid_at >= ?"
-            params.append(filters.valid_at_start)
+            params.append(_normalize_ts(filters.valid_at_start))
         if filters and filters.valid_at_end:
             sql += " AND valid_at <= ?"
-            params.append(filters.valid_at_end)
+            params.append(_normalize_ts(filters.valid_at_end))
 
         rows = conn.execute(sql, params).fetchall()
         return [self._row_to_relation(r) for r in rows]
@@ -457,10 +458,10 @@ class SQLiteTemporalStore:
             sql += " AND expired_at IS NULL"
         if filters.valid_at_start:
             sql += " AND valid_at >= ?"
-            params.append(filters.valid_at_start)
+            params.append(_normalize_ts(filters.valid_at_start))
         if filters.valid_at_end:
             sql += " AND valid_at <= ?"
-            params.append(filters.valid_at_end)
+            params.append(_normalize_ts(filters.valid_at_end))
         if filters.relation_names:
             placeholders = ",".join("?" for _ in filters.relation_names)
             sql += f" AND name IN ({placeholders})"
