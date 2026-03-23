@@ -307,7 +307,7 @@ class SQLiteTemporalStore:
                  json.dumps(rel.episode_ids), json.dumps(rel.attributes),
                  _normalize_ts(rel.valid_at), _normalize_ts(rel.invalid_at),
                  _normalize_ts(rel.expired_at),
-                 rel.created_at),
+                 _normalize_ts(rel.created_at)),
             )
         conn.commit()
 

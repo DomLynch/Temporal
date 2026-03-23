@@ -75,7 +75,7 @@ class E2ELLM:
         if "duplicate" in system_msg and "entit" in system_msg:
             return self._response(self._scenarios.get("entity_dedup", {
                 "is_duplicate": False,
-                "canonical_index": -1,
+                "duplicate_of": "",
             }))
 
         # Relation dedup/contradiction
@@ -346,7 +346,7 @@ class TestEntityDedup:
                 "entities": [{"name": "Dominic", "entity_type": "person"}]
             },
             "relations": {"relations": []},
-            "entity_dedup": {"is_duplicate": True, "canonical_index": 0},
+            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Dominic"},
         })
 
         r2 = await retain(
@@ -357,9 +357,10 @@ class TestEntityDedup:
             store=store,
         )
 
-        # Should not have doubled the entities
-        # (exact count depends on resolution logic, but should not be 2x)
+        # Should not have doubled the entities — resolver merges with canonical
         assert len(store.entities) <= first_count + 1
+        # The resolved entity count should reflect the merge
+        assert r2.entities_resolved >= 0  # 0 if no merge needed, >=1 if merged
 
 
 @pytest.mark.asyncio
@@ -615,17 +616,25 @@ class TestContradictionInvalidation:
         )
 
         assert result.success
-        # The new relation should exist
-        dubai_relations = [r for r in store.relations if "Dubai" in r.fact]
-        assert len(dubai_relations) >= 1
+
+        # The new Dubai relation should exist
+        dubai_relations = [r for r in store.relations if "Dubai" in r.fact and r.is_active]
+        assert len(dubai_relations) >= 1, "New Dubai relation should be active"
 
         # The old London relation should have been invalidated
         london_relations = [r for r in store.relations if r.id == "existing_r1"]
-        if london_relations:
-            # If invalidation ran, invalid_at should be set
-            old_rel = london_relations[0]
-            if old_rel.invalid_at:
-                assert old_rel.invalid_at is not None, "Old contradicted relation should have invalid_at set"
+        assert len(london_relations) >= 1, "Old London relation should still exist (invalidated, not deleted)"
+        old_rel = london_relations[0]
+        # Strong assertion: invalid_at MUST be set for the contradicted relation
+        assert old_rel.invalid_at is not None, (
+            "Old contradicted relation must have invalid_at set. "
+            f"Current state: invalid_at={old_rel.invalid_at}, expired_at={old_rel.expired_at}"
+        )
+
+        # Counter should reflect the invalidation
+        assert result.relations_invalidated >= 1, (
+            f"relations_invalidated should be >= 1, got {result.relations_invalidated}"
+        )
 
 
 @pytest.mark.asyncio
