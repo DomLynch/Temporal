@@ -85,7 +85,13 @@ def _parse_json_response(content: str) -> dict[str, Any]:
 
     # Try direct parse
     try:
-        return json.loads(content)
+        result = json.loads(content)
+        if isinstance(result, dict):
+            return result
+        if isinstance(result, list):
+            return {"items": result}
+        # Non-dict/list (float, int, str, etc.) — wrap it
+        return {"value": result}
     except json.JSONDecodeError:
         pass
 
@@ -93,7 +99,8 @@ def _parse_json_response(content: str) -> dict[str, Any]:
     md_match = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', content, re.DOTALL)
     if md_match:
         try:
-            return json.loads(md_match.group(1).strip())
+            result = json.loads(md_match.group(1).strip())
+            return result if isinstance(result, dict) else {"value": result}
         except json.JSONDecodeError:
             pass
 
@@ -101,7 +108,8 @@ def _parse_json_response(content: str) -> dict[str, Any]:
     json_match = re.search(r'\{.*\}', content, re.DOTALL)
     if json_match:
         try:
-            return json.loads(json_match.group())
+            result = json.loads(json_match.group())
+            return result if isinstance(result, dict) else {"value": result}
         except json.JSONDecodeError:
             pass
 
