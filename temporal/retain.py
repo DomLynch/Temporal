@@ -208,8 +208,9 @@ async def _extract_entities(
     context = {
         "episode_content": episode.content,
         "episode_type": episode.episode_type.value,
-        "previous_context": previous_context,
-        "source": episode.source,
+        "previous_episodes": previous_context,
+        "source_description": episode.source,
+        "reference_time": episode.reference_time,
     }
 
     # Select prompt based on episode type (per Graphiti kernel invariant)
@@ -276,7 +277,9 @@ async def _extract_relations(
         "episode_content": episode.content,
         "episode_type": episode.episode_type.value,
         "entities": entity_list,
-        "previous_context": previous_context,
+        "previous_episodes": previous_context,
+        "reference_time": episode.reference_time,
+        "source_description": episode.source,
     }
 
     messages = extract_relations(context)
@@ -286,8 +289,9 @@ async def _extract_relations(
     raw_relations = parsed.get("relations", [])
 
     for raw in raw_relations:
-        source_name = raw.get("source", "").strip()
-        target_name = raw.get("target", "").strip()
+        # Accept both prompt schema (source_entity_name) and short form (source)
+        source_name = (raw.get("source_entity_name") or raw.get("source", "")).strip()
+        target_name = (raw.get("target_entity_name") or raw.get("target", "")).strip()
         fact = raw.get("fact", "").strip()
 
         if not source_name or not target_name or not fact:

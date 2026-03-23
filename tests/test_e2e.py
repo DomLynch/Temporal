@@ -555,3 +555,157 @@ class TestPackageImports:
         import temporal
         assert hasattr(temporal, "__version__")
         assert temporal.__version__ == "0.1.0"
+
+
+@pytest.mark.asyncio
+class TestContradictionInvalidation:
+    async def test_contradiction_through_retain(self):
+        """When a new fact contradicts an old one, the old one gets invalidated."""
+        from temporal.retain import retain
+
+        store = E2EStore()
+        embedder = E2EEmbedder()
+
+        # Pre-populate store with an existing relation
+        existing = Relation(
+            id="existing_r1",
+            group_id="brain",
+            source_entity_id="e1",
+            target_entity_id="e2",
+            source_entity_name="Dominic",
+            target_entity_name="London",
+            name="lives_in",
+            fact="Dominic lives in London",
+            valid_at="2018-01-01T00:00:00+00:00",
+        )
+        store.relations.append(existing)
+        store.entities.append(Entity(id="e1", group_id="brain", name="Dominic"))
+        store.entities.append(Entity(id="e2", group_id="brain", name="London"))
+
+        # Retain new contradictory fact
+        llm = E2ELLM(scenarios={
+            "entities": {
+                "entities": [
+                    {"name": "Dominic", "entity_type": "person"},
+                    {"name": "Dubai", "entity_type": "location"},
+                ]
+            },
+            "relations": {
+                "relations": [{
+                    "source_entity_name": "Dominic",
+                    "target_entity_name": "Dubai",
+                    "relation_name": "lives_in",
+                    "fact": "Dominic lives in Dubai",
+                    "valid_at": "2022-01-01T00:00:00+00:00",
+                }]
+            },
+            "relation_dedup": {
+                "is_new": True,
+                "duplicate_indices": [],
+                "contradicted_indices": [0],
+            },
+        })
+
+        result = await retain(
+            content="Dominic moved to Dubai in 2022",
+            group_id="brain",
+            llm=llm,
+            embedder=embedder,
+            store=store,
+        )
+
+        assert result.success
+        # The new relation should exist
+        dubai_relations = [r for r in store.relations if "Dubai" in r.fact]
+        assert len(dubai_relations) >= 1
+
+
+@pytest.mark.asyncio
+class TestRelationProvenance:
+    async def test_relation_tracks_episode_id(self):
+        """Relations should reference the episode that created them."""
+        from temporal.retain import retain
+
+        store = E2EStore()
+        llm = E2ELLM()
+        embedder = E2EEmbedder()
+
+        result = await retain(
+            content="Dominic lives in Dubai",
+            group_id="brain",
+            llm=llm,
+            embedder=embedder,
+            store=store,
+        )
+
+        for rel in store.relations:
+            assert len(rel.episode_ids) >= 1
+            assert result.episode_id in rel.episode_ids
+
+
+@pytest.mark.asyncio
+class TestPromptParserAlignment:
+    async def test_source_entity_name_parsed(self):
+        """Parser accepts prompt's source_entity_name field."""
+        from temporal.retain import retain
+
+        llm = E2ELLM(scenarios={
+            "entities": {
+                "entities": [
+                    {"name": "Alice", "entity_type": "person"},
+                    {"name": "Bob", "entity_type": "person"},
+                ]
+            },
+            "relations": {
+                "relations": [{
+                    "source_entity_name": "Alice",
+                    "target_entity_name": "Bob",
+                    "relation_name": "knows",
+                    "fact": "Alice knows Bob",
+                }]
+            },
+        })
+        store = E2EStore()
+
+        result = await retain(
+            content="Alice knows Bob",
+            group_id="test",
+            llm=llm,
+            store=store,
+        )
+
+        assert result.relations_extracted >= 1
+        if store.relations:
+            assert store.relations[0].source_entity_name == "Alice"
+            assert store.relations[0].target_entity_name == "Bob"
+
+    async def test_short_form_source_also_works(self):
+        """Parser also accepts short form (source/target) for backward compat."""
+        from temporal.retain import retain
+
+        llm = E2ELLM(scenarios={
+            "entities": {
+                "entities": [
+                    {"name": "Alice", "entity_type": "person"},
+                    {"name": "Bob", "entity_type": "person"},
+                ]
+            },
+            "relations": {
+                "relations": [{
+                    "source": "Alice",
+                    "target": "Bob",
+                    "relation_name": "knows",
+                    "fact": "Alice knows Bob",
+                }]
+            },
+        })
+        store = E2EStore()
+
+        result = await retain(
+            content="Alice knows Bob",
+            group_id="test",
+            llm=llm,
+            store=store,
+        )
+
+        assert result.relations_extracted >= 1

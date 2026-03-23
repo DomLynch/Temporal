@@ -112,6 +112,20 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
     return dot / (norm_a * norm_b)
 
 
+def _normalize_ts(ts: str | None) -> str | None:
+    """Normalize ISO timestamp to consistent format for lexicographic sorting.
+
+    Ensures all timestamps use '+00:00' suffix (not 'Z') so SQL string
+    comparisons produce chronologically correct results.
+    """
+    if not ts:
+        return ts
+    # Replace Z suffix with +00:00
+    if ts.endswith("Z"):
+        ts = ts[:-1] + "+00:00"
+    return ts
+
+
 class SQLiteTemporalStore:
     """SQLite implementation of the TemporalStore protocol.
 
@@ -154,8 +168,9 @@ class SQLiteTemporalStore:
                (id, group_id, name, content, source, episode_type, reference_time, created_at, metadata)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (episode.id, episode.group_id, episode.name, episode.content,
-             episode.source, episode.episode_type.value, episode.reference_time,
-             episode.created_at, json.dumps(episode.metadata)),
+             episode.source, episode.episode_type.value,
+             _normalize_ts(episode.reference_time),
+             _normalize_ts(episode.created_at), json.dumps(episode.metadata)),
         )
         conn.commit()
 
@@ -271,8 +286,8 @@ class SQLiteTemporalStore:
              relation.target_entity_name, relation.name, relation.fact,
              json.dumps(relation.fact_embedding or []),
              json.dumps(relation.episode_ids), json.dumps(relation.attributes),
-             relation.valid_at, relation.invalid_at, relation.expired_at,
-             relation.created_at),
+             _normalize_ts(relation.valid_at), _normalize_ts(relation.invalid_at),
+             _normalize_ts(relation.expired_at), _normalize_ts(relation.created_at)),
         )
         conn.commit()
 
@@ -381,12 +396,12 @@ class SQLiteTemporalStore:
         if expired_at:
             conn.execute(
                 "UPDATE relations SET invalid_at = ?, expired_at = ? WHERE id = ?",
-                (invalid_at, expired_at, relation_id),
+                (_normalize_ts(invalid_at), _normalize_ts(expired_at), relation_id),
             )
         else:
             conn.execute(
                 "UPDATE relations SET invalid_at = ? WHERE id = ?",
-                (invalid_at, relation_id),
+                (_normalize_ts(invalid_at), relation_id),
             )
         conn.commit()
 
