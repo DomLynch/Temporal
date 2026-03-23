@@ -354,9 +354,10 @@ async def _resolve_single_relation(
     usage = accumulate_usage(usage, adj_usage)
 
     if result.verdict == ResolutionVerdict.DUPLICATE and result.canonical_id:
-        # Reuse existing relation
+        # Reuse existing relation — search ALL candidates (endpoint + invalidation)
+        all_candidates = endpoint_relations + invalidation_candidates
         canonical = next(
-            (r for r in endpoint_relations if r.id == result.canonical_id),
+            (r for r in all_candidates if r.id == result.canonical_id),
             None,
         )
         if canonical:

@@ -204,11 +204,14 @@ class TestDuplicateEntityMerge:
         r2 = await retain(content="Dominic lives in Dubai", group_id="brain",
                           llm=llm2, embedder=embedder, store=store)
 
-        # Entity count should NOT double
-        assert len(store.entities) <= first_entity_count + 1
-        # entities_resolved should indicate a merge happened
-        assert r2.entities_resolved >= 1, (
-            f"Expected entities_resolved >= 1 (merge), got {r2.entities_resolved}"
+        # EXACT: entity count must be unchanged (canonical reused, not added)
+        assert len(store.entities) == first_entity_count, (
+            f"Entity count should be unchanged after dedup merge. "
+            f"Was {first_entity_count}, now {len(store.entities)}"
+        )
+        # EXACT: entities_resolved must be exactly 1 (one entity merged)
+        assert r2.entities_resolved == 1, (
+            f"Expected entities_resolved == 1 (one merge), got {r2.entities_resolved}"
         )
 
 
@@ -270,11 +273,19 @@ class TestDuplicateRelationReuse:
         r2 = await retain(content="Dominic lives in Dubai again", group_id="brain",
                           llm=llm2, embedder=embedder, store=store)
 
-        # Active relation count should not increase
+        # EXACT: active relation count must be unchanged (canonical reused)
         active_relations = [r for r in store.relations if r.is_active]
-        assert len(active_relations) <= first_relation_count + 1
+        assert len(active_relations) == first_relation_count, (
+            f"Active relation count should be unchanged after duplicate reuse. "
+            f"Was {first_relation_count}, now {len(active_relations)}"
+        )
 
-        # No invalidation should have occurred (duplicate, not contradiction)
+        # EXACT: relations_resolved must indicate reuse happened
+        assert r2.relations_resolved >= 1, (
+            f"Expected relations_resolved >= 1 (canonical reuse), got {r2.relations_resolved}"
+        )
+
+        # EXACT: no invalidation (duplicate, not contradiction)
         assert r2.relations_invalidated == 0, (
             f"Duplicate reuse should not invalidate. Got {r2.relations_invalidated}"
         )
@@ -342,8 +353,10 @@ class TestContradictionInvariant:
         dubai = [r for r in store.relations if "Dubai" in r.fact and r.is_active]
         assert len(dubai) >= 1, "New Dubai relation should be active"
 
-        # Counter must reflect invalidation
-        assert result.relations_invalidated >= 1
+        # EXACT: counter must reflect exactly 1 invalidation
+        assert result.relations_invalidated == 1, (
+            f"Expected exactly 1 invalidation, got {result.relations_invalidated}"
+        )
 
 
 # ---------------------------------------------------------------------------
