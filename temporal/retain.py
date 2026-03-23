@@ -136,7 +136,8 @@ async def retain(
         entities, episode, llm=llm, embedder=embedder, store=store
     )
     total_usage = accumulate_usage(total_usage, entity_resolve_usage)
-    result.entities_resolved = result.entities_extracted - len(resolved_entities)
+    # Count entities that were merged into existing canonicals
+    result.entities_resolved = sum(1 for old_id, new_id in _uuid_map.items() if old_id != new_id)
 
     # Step 6: Extract relations via LLM
     relations, relation_usage = await _extract_relations(
@@ -160,8 +161,10 @@ async def retain(
         relations, episode, llm=llm, embedder=embedder, store=store
     )
     total_usage = accumulate_usage(total_usage, resolve_usage)
-    result.relations_resolved = result.relations_extracted - len(
-        [r for r in resolved_relations if r.id in {nr.id for nr in relations}]
+    # Count relations that were resolved as duplicates (reused existing canonical)
+    new_relation_ids = {r.id for r in relations}
+    result.relations_resolved = sum(
+        1 for r in resolved_relations if r.id not in new_relation_ids
     )
     result.relations_invalidated = len(invalidated_relations)
 

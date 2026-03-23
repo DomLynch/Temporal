@@ -1,17 +1,19 @@
 """
 Temporal — Temporal knowledge graph for cognitive agents.
 
-Extracted from Graphiti (53K LOC → ~3.5K LOC).
+Extracted from Graphiti (53K LOC → ~2.7K LOC).
 Knows when facts became true, when they changed, and why.
 
 Core operations:
-- retain(episode) → extract entities + relations with temporal validity
+- retain(content) → extract entities + relations with temporal validity
 - search(query) → retrieve with temporal filtering
-- invalidate() → mark old facts as superseded
 """
 
 __version__ = "0.1.0"
 
+from temporal.retain import retain
+from temporal.search import search
+from temporal.store import SQLiteTemporalStore
 from temporal.types import (
     Entity,
     EntityType,
@@ -35,6 +37,10 @@ from temporal.interfaces import (
 
 __all__ = [
     "__version__",
+    # Public API
+    "retain",
+    "search",
+    "SQLiteTemporalStore",
     # Types
     "Entity",
     "EntityType",

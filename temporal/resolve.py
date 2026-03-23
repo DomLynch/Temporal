@@ -266,7 +266,7 @@ async def resolve_relations(
 
     for new_rel in new_relations:
         result, inv, usage = await _resolve_single_relation(
-            new_rel, episode, llm, store
+            new_rel, episode, llm, store, embedder=embedder
         )
         total_usage = accumulate_usage(total_usage, usage)
         resolved.append(result)
@@ -280,6 +280,7 @@ async def _resolve_single_relation(
     episode: Episode,
     llm: LLMClient | None,
     store: TemporalStore | None,
+    embedder: Embedder | None = None,
 ) -> tuple[Relation, list[Relation], dict[str, int]]:
     """Resolve a single relation against the graph.
 
@@ -326,7 +327,7 @@ async def _resolve_single_relation(
                 new_rel.fact,
                 new_rel.group_id,
                 store=store,
-                embedder=None,  # Embeddings already generated in resolve_relations
+                embedder=embedder,
                 exclude_ids=list(endpoint_ids),
                 limit=10,
             )
