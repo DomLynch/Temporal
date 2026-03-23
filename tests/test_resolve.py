@@ -412,7 +412,7 @@ class TestTemporalInvalidation:
             invalid_at="2023-01-01T00:00:00+00:00",  # Already invalid before new
         )
 
-        result = _apply_temporal_invalidation(
+        result = await _apply_temporal_invalidation(
             new, ["old_1"], [old], store=None,
         )
 
@@ -428,7 +428,7 @@ class TestTemporalInvalidation:
             valid_at="2025-01-01T00:00:00+00:00",
         )
 
-        result = _apply_temporal_invalidation(
+        result = await _apply_temporal_invalidation(
             new, ["old_1"], [old], store=None,
         )
 
@@ -441,7 +441,7 @@ class TestTemporalInvalidation:
         new = Relation(fact="New")
         old = Relation(id="old_1", fact="Old")
 
-        result = _apply_temporal_invalidation(
+        result = await _apply_temporal_invalidation(
             new, ["old_1"], [old], store=None,
         )
 

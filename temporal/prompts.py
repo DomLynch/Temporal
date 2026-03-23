@@ -287,7 +287,7 @@ Tasks:
 Rules:
 - Similar facts with key differences (especially numeric values) are NOT duplicates.
 - A fact can be both a duplicate AND contradicted (e.g., same fact but new version supersedes).
-- Indices are 0-based within each list.
+- Indices are continuous across both lists (EXISTING FACTS start at 0, INVALIDATION CANDIDATES continue the numbering). Use the idx values shown next to each fact.
 
 Return JSON:
 {{"duplicate_indices": [int], "contradicted_indices": [int], "is_new": true/false}}

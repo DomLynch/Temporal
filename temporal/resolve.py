@@ -315,19 +315,22 @@ async def _resolve_single_relation(
             _log.debug("Exact duplicate: reusing relation %s", existing.id)
             return existing, [], usage
 
-    # Step 3: Find broader invalidation candidates via text search
+    # Step 3: Find broader invalidation candidates via hybrid search
+    # Uses the search kernel (text + vector + RRF) for quality, not just text match
     invalidation_candidates: list[Relation] = []
     if store and new_rel.fact:
         try:
-            search_results = await store.search_relations_by_text(
-                new_rel.group_id, new_rel.fact, limit=10
-            )
-            # Exclude endpoint relations (already handled above)
+            from temporal.search import search_for_resolution
             endpoint_ids = {r.id for r in endpoint_relations}
-            invalidation_candidates = [
-                sr.relation for sr in search_results
-                if sr.relation.id not in endpoint_ids
-            ]
+            search_results = await search_for_resolution(
+                new_rel.fact,
+                new_rel.group_id,
+                store=store,
+                embedder=None,  # Embeddings already generated in resolve_relations
+                exclude_ids=list(endpoint_ids),
+                limit=10,
+            )
+            invalidation_candidates = [sr.relation for sr in search_results]
         except Exception as exc:
             _log.debug("Invalidation search failed: %s", exc)
 
@@ -361,11 +364,11 @@ async def _resolve_single_relation(
             _log.debug("Duplicate relation: reusing %s", canonical.id)
             return canonical, [], usage
 
-    # Handle contradictions — invalidate old facts
+    # Handle contradictions — invalidate old facts (persists to store)
     invalidated_rels: list[Relation] = []
     if result.invalidated_ids:
         all_candidates = endpoint_relations + invalidation_candidates
-        invalidated_rels = _apply_temporal_invalidation(
+        invalidated_rels = await _apply_temporal_invalidation(
             new_rel, result.invalidated_ids, all_candidates, store
         )
 
@@ -440,7 +443,7 @@ async def _adjudicate_relation(
     return ResolveResult(verdict=ResolutionVerdict.NEW), usage
 
 
-def _apply_temporal_invalidation(
+async def _apply_temporal_invalidation(
     new_rel: Relation,
     invalidated_ids: list[str],
     all_candidates: list[Relation],
@@ -452,6 +455,8 @@ def _apply_temporal_invalidation(
     1. Newer fact invalidates older: set invalid_at = new_fact.valid_at
     2. Older pre-existing fact can expire new: set new_fact.expired_at
     3. Already-invalidated relations are skipped
+
+    Persists invalidation to store immediately (not deferred).
 
     Returns list of relations that were invalidated.
     """
@@ -494,6 +499,18 @@ def _apply_temporal_invalidation(
             if candidate.expired_at is None:
                 candidate.expired_at = now_str
             invalidated.append(candidate)
+
+            # Persist invalidation immediately
+            if store:
+                try:
+                    await store.invalidate_relation(
+                        candidate.id,
+                        invalid_at=candidate.invalid_at,
+                        expired_at=candidate.expired_at,
+                    )
+                except Exception as exc:
+                    _log.warning("Failed to persist invalidation for %s: %s", candidate.id, exc)
+
             _log.info(
                 "Invalidated relation %s: '%s' (superseded by '%s')",
                 candidate.id, candidate.fact[:60], new_rel.fact[:60],

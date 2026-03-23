@@ -295,15 +295,34 @@ def _rrf_merge(
     return merged
 
 
+def _parse_dt(iso_str: str | None) -> datetime | None:
+    """Parse ISO datetime string safely."""
+    if not iso_str:
+        return None
+    try:
+        from datetime import datetime, timezone
+        dt = datetime.fromisoformat(iso_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except (ValueError, TypeError):
+        return None
+
+
 def _apply_temporal_filters(
     results: list[SearchResult],
     filters: SearchFilters,
 ) -> list[SearchResult]:
     """Apply temporal filters to search results.
 
+    Uses parsed datetimes for comparison, not raw strings.
     This is the core temporal differentiator — only Temporal does this.
     """
     filtered: list[SearchResult] = []
+
+    # Pre-parse filter boundaries
+    filter_start = _parse_dt(filters.valid_at_start)
+    filter_end = _parse_dt(filters.valid_at_end)
 
     for sr in results:
         rel = sr.relation
@@ -316,13 +335,13 @@ def _apply_temporal_filters(
         if rel.expired_at and not filters.include_expired:
             continue
 
-        # Filter by valid_at window
-        if filters.valid_at_start and rel.valid_at:
-            if rel.valid_at < filters.valid_at_start:
+        # Filter by valid_at window (using parsed datetimes)
+        rel_valid = _parse_dt(rel.valid_at)
+        if filter_start and rel_valid:
+            if rel_valid < filter_start:
                 continue
-
-        if filters.valid_at_end and rel.valid_at:
-            if rel.valid_at > filters.valid_at_end:
+        if filter_end and rel_valid:
+            if rel_valid > filter_end:
                 continue
 
         # Filter by relation names
