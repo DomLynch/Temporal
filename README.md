@@ -3,7 +3,7 @@
 > Graphiti's temporal knowledge graph — stripped from 53,000 lines to 2,800.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License-Apache--2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-155%20passing-brightgreen.svg)](#tests)
 
 Temporal is a knowledge graph that knows *when* things were true. It extracts entities and relations from text, tracks how facts change over time, and lets you query the state of the world at any point in history.

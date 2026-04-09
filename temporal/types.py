@@ -101,7 +101,7 @@ class Episode:
 class Entity:
     """A canonical entity in the knowledge graph.
 
-    Entities are deduplicated — "Dominic", "Dom", "the founder" should
+    Entities are deduplicated — "Alice", "Ali", "the founder" should
     resolve to one canonical Entity. The name_embedding enables
     semantic matching during dedup.
     """
