@@ -272,8 +272,8 @@ The temporal validity model (valid_at, invalid_at, expired_at), the entity resol
 
 Temporal pairs naturally with:
 
-- **[NanoLetta](https://github.com/domininclynch/nanoletta)** — cognitive agent loop (Letta → 1.9k LOC). Wire Temporal in as a custom tool.
-- **[Lucid](https://github.com/domininclynch/lucid)** — semantic memory runtime (Hindsight → 2k LOC). `retain() / recall() / reflect()`.
+- **[NanoLetta](https://github.com/DomLynch/NanoLetta)** — cognitive agent loop (Letta → 1.9k LOC). Wire Temporal in as a custom tool.
+- **[Lucid](https://github.com/DomLynch/Lucid)** — semantic memory runtime (Hindsight → 2k LOC). `retain() / recall() / reflect()`.
 
 ---
 
