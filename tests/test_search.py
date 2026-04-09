@@ -81,11 +81,11 @@ class MockReranker:
         return [(i, 1.0 - i * 0.1) for i in reversed(range(min(len(candidates), top_k)))]
 
 
-def _rel(id: str, fact: str, group_id: str = "brain", **kwargs) -> Relation:
+def _rel(id: str, fact: str, group_id: str = "user-1", **kwargs) -> Relation:
     return Relation(id=id, fact=fact, group_id=group_id, **kwargs)
 
 
-def _entity(id: str, name: str, group_id: str = "brain") -> Entity:
+def _entity(id: str, name: str, group_id: str = "user-1") -> Entity:
     return Entity(id=id, name=name, group_id=group_id)
 
 
@@ -99,43 +99,43 @@ class TestSearch:
         from temporal.search import search
 
         store = MockStore(relations=[
-            _rel("r1", "Dominic lives in Dubai"),
+            _rel("r1", "Alice lives in London"),
             _rel("r2", "Brain uses Qwen model"),
-            _rel("r3", "Dominic founded GDA"),
+            _rel("r3", "Alice founded GDA"),
         ])
 
-        result = await search("Dominic", "brain", store=store)
+        result = await search("Alice", "user-1", store=store)
 
         facts = [r.relation.fact for r in result.results]
-        assert any("Dominic" in f for f in facts)
+        assert any("Alice" in f for f in facts)
         assert result.total_found > 0
 
     async def test_vector_search_with_embedder(self):
         from temporal.search import search
 
         store = MockStore(relations=[
-            _rel("r1", "Dominic lives in Dubai"),
+            _rel("r1", "Alice lives in London"),
         ])
         embedder = MockEmbedder()
 
-        result = await search("Dominic", "brain", store=store, embedder=embedder)
+        result = await search("Alice", "user-1", store=store, embedder=embedder)
 
         assert result.total_found >= 1
 
     async def test_entity_graph_search(self):
         from temporal.search import search
 
-        entity = _entity("e1", "Dominic")
+        entity = _entity("e1", "Alice")
         relations = [
-            _rel("r1", "Dominic lives in Dubai", source_entity_id="e1", target_entity_id="e2"),
+            _rel("r1", "Alice lives in London", source_entity_id="e1", target_entity_id="e2"),
             _rel("r2", "Brain uses Qwen", source_entity_id="e3", target_entity_id="e4"),
         ]
 
         store = MockStore(relations=relations, entities=[entity])
 
-        result = await search("Dominic", "brain", store=store)
+        result = await search("Alice", "user-1", store=store)
 
-        # Should find r1 (connected to Dominic entity) via graph search
+        # Should find r1 (connected to Alice entity) via graph search
         relation_ids = [r.relation.id for r in result.results]
         assert "r1" in relation_ids
 
@@ -143,14 +143,14 @@ class TestSearch:
         from temporal.search import search
 
         store = MockStore(relations=[_rel("r1", "test")])
-        result = await search("", "brain", store=store)
+        result = await search("", "user-1", store=store)
 
         assert result.total_found == 0
 
     async def test_no_store_returns_empty(self):
         from temporal.search import search
 
-        result = await search("test", "brain")
+        result = await search("test", "user-1")
         assert result.total_found == 0
 
 
@@ -279,7 +279,7 @@ class TestTemporalFiltering:
 
         r1 = SearchResult(
             relation=_rel("r1", "Fact about Dom",
-                          source_entity_name="Dominic", target_entity_name="Dubai"),
+                          source_entity_name="Alice", target_entity_name="London"),
             score=0.9,
         )
         r2 = SearchResult(
@@ -290,7 +290,7 @@ class TestTemporalFiltering:
 
         filtered = _apply_temporal_filters(
             [r1, r2],
-            SearchFilters(entity_names=["Dominic"]),
+            SearchFilters(entity_names=["Alice"]),
         )
 
         assert len(filtered) == 1
@@ -303,12 +303,12 @@ class TestReranking:
         from temporal.search import search
 
         store = MockStore(relations=[
-            _rel("r1", "Dominic first fact"),
-            _rel("r2", "Dominic second fact"),
+            _rel("r1", "Alice first fact"),
+            _rel("r2", "Alice second fact"),
         ])
         reranker = MockReranker()
 
-        result = await search("Dominic", "brain", store=store, reranker=reranker)
+        result = await search("Alice", "user-1", store=store, reranker=reranker)
 
         # Reranker reverses order, so last item should come first
         assert result.total_found >= 1
@@ -320,15 +320,15 @@ class TestPartitionIsolation:
         from temporal.search import search
 
         store = MockStore(relations=[
-            _rel("r1", "Dominic lives in Dubai", group_id="brain"),
-            _rel("r2", "Dominic likes coffee", group_id="personal"),
+            _rel("r1", "Alice lives in London", group_id="user-1"),
+            _rel("r2", "Alice likes coffee", group_id="personal"),
         ])
 
-        result = await search("Dominic", "brain", store=store)
+        result = await search("Alice", "user-1", store=store)
 
         # Should only find brain group results
         for r in result.results:
-            assert r.relation.group_id == "brain"
+            assert r.relation.group_id == "user-1"
 
 
 @pytest.mark.asyncio
@@ -337,12 +337,12 @@ class TestSearchForResolution:
         from temporal.search import search_for_resolution
 
         store = MockStore(relations=[
-            _rel("r1", "Dominic lives in Dubai"),
-            _rel("r2", "Dominic founded GDA"),
+            _rel("r1", "Alice lives in London"),
+            _rel("r2", "Alice founded GDA"),
         ])
 
         results = await search_for_resolution(
-            "Dominic", "brain", store=store, exclude_ids=["r1"]
+            "Alice", "user-1", store=store, exclude_ids=["r1"]
         )
 
         relation_ids = [r.relation.id for r in results]
@@ -353,11 +353,11 @@ class TestSearchForResolution:
         from temporal.search import search_for_resolution
 
         store = MockStore(relations=[
-            _rel("r1", "Dominic lives in Dubai"),
-            _rel("r2", "Dominic founded GDA"),
+            _rel("r1", "Alice lives in London"),
+            _rel("r2", "Alice founded GDA"),
         ])
 
-        results = await search_for_resolution("Dominic", "brain", store=store)
+        results = await search_for_resolution("Alice", "user-1", store=store)
 
         assert len(results) >= 1
         # All results should have scores

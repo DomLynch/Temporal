@@ -116,15 +116,15 @@ async def main():
         # TEST 1: retain() — extract entities + relations
         # -------------------------------------------------------------------
         print("\n--- TEST 1: retain() ---")
-        print("Input: paragraph about Dominic")
+        print("Input: paragraph about Alice")
 
         r1 = await retain(
             content=(
-                "Dominic is a tech founder based in Dubai. He is building "
+                "Alice is a tech founder based in London. He is building "
                 "a cognitive AI system called Brain. He previously lived in "
-                "London before moving to Dubai in 2022."
+                "London before moving to London in 2022."
             ),
-            group_id="brain",
+            group_id="user-1",
             source="test",
             episode_type=EpisodeType.TEXT,
             llm=llm,
@@ -148,8 +148,8 @@ async def main():
         # -------------------------------------------------------------------
         print("\n--- TEST 2: Store contents ---")
 
-        entities = await store.get_entities_by_group("brain")
-        relations = await store.get_active_relations("brain")
+        entities = await store.get_entities_by_group("user-1")
+        relations = await store.get_active_relations("user-1")
 
         print(f"  Entities: {len(entities)}")
         for e in entities[:5]:
@@ -167,11 +167,11 @@ async def main():
         # TEST 3: search() — temporal retrieval
         # -------------------------------------------------------------------
         print("\n--- TEST 3: search() ---")
-        print("  Query: 'Where does Dominic live?'")
+        print("  Query: 'Where does Alice live?'")
 
         results = await search(
-            query="Where does Dominic live?",
-            group_id="brain",
+            query="Where does Alice live?",
+            group_id="user-1",
             store=store,
             embedder=embedder,
         )
@@ -192,10 +192,10 @@ async def main():
 
         r2 = await retain(
             content=(
-                "Dominic is also pursuing a part-time PhD while managing "
+                "Alice is also pursuing a part-time PhD while managing "
                 "Brain development. He works 12 hours a day."
             ),
-            group_id="brain",
+            group_id="user-1",
             source="test",
             llm=llm,
             embedder=embedder,
@@ -207,7 +207,7 @@ async def main():
         print(f"  Entities resolved (dedup): {r2.entities_resolved}")
         print(f"  Relations extracted: {r2.relations_extracted}")
 
-        entities_after = await store.get_entities_by_group("brain")
+        entities_after = await store.get_entities_by_group("user-1")
         print(f"  Total entities in store: {len(entities_after)}")
 
         print("  ✅ Second retain PASSED")
@@ -217,7 +217,7 @@ async def main():
         # -------------------------------------------------------------------
         print("\n--- TEST 5: Temporal validity ---")
 
-        all_relations = await store.get_active_relations("brain")
+        all_relations = await store.get_active_relations("user-1")
         temporal_count = sum(1 for r in all_relations if r.valid_at)
         print(f"  Relations with valid_at: {temporal_count}/{len(all_relations)}")
 

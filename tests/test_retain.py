@@ -42,17 +42,17 @@ class MockLLM:
     def __init__(self, entity_response=None, relation_response=None, resolve_response=None):
         self._entity_response = entity_response or {
             "entities": [
-                {"name": "Dominic", "entity_type": "person", "summary": "The founder"},
-                {"name": "Dubai", "entity_type": "location", "summary": "City in UAE"},
+                {"name": "Alice", "entity_type": "person", "summary": "The founder"},
+                {"name": "London", "entity_type": "location", "summary": "City in UAE"},
             ]
         }
         self._relation_response = relation_response or {
             "relations": [
                 {
-                    "source": "Dominic",
-                    "target": "Dubai",
+                    "source": "Alice",
+                    "target": "London",
                     "relation_name": "lives_in",
-                    "fact": "Dominic lives in Dubai",
+                    "fact": "Alice lives in London",
                     "valid_at": "2022-01-01T00:00:00+00:00",
                 },
             ]
@@ -163,8 +163,8 @@ class TestRetainBasic:
         store = MockStore()
 
         result = await retain(
-            content="Dominic lives in Dubai and builds AI.",
-            group_id="brain",
+            content="Alice lives in London and builds AI.",
+            group_id="user-1",
             source="telegram",
             llm=llm,
             embedder=embedder,
@@ -181,13 +181,13 @@ class TestRetainBasic:
     async def test_empty_content_fails(self):
         from temporal.retain import retain
 
-        result = await retain(content="", group_id="brain")
+        result = await retain(content="", group_id="user-1")
         assert not result.success
 
     async def test_whitespace_content_fails(self):
         from temporal.retain import retain
 
-        result = await retain(content="   ", group_id="brain")
+        result = await retain(content="   ", group_id="user-1")
         assert not result.success
 
     async def test_no_llm_saves_episode_only(self):
@@ -197,7 +197,7 @@ class TestRetainBasic:
         store = MockStore()
         result = await retain(
             content="Some text",
-            group_id="brain",
+            group_id="user-1",
             store=store,
         )
 
@@ -213,7 +213,7 @@ class TestRetainBasic:
 
         await retain(
             content="Test content",
-            group_id="brain",
+            group_id="user-1",
             name="Test Episode",
             source="whatsapp",
             episode_type=EpisodeType.MESSAGE,
@@ -222,7 +222,7 @@ class TestRetainBasic:
         )
 
         ep = store.episodes[0]
-        assert ep.group_id == "brain"
+        assert ep.group_id == "user-1"
         assert ep.name == "Test Episode"
         assert ep.source == "whatsapp"
         assert ep.episode_type == EpisodeType.MESSAGE
@@ -235,23 +235,23 @@ class TestEntityExtraction:
 
         llm = MockLLM(entity_response={
             "entities": [
-                {"name": "Dominic", "entity_type": "person"},
+                {"name": "Alice", "entity_type": "person"},
                 {"name": "Brain", "entity_type": "concept"},
-                {"name": "Dubai", "entity_type": "location"},
+                {"name": "London", "entity_type": "location"},
             ]
         })
         store = MockStore()
 
         result = await retain(
-            content="Dominic builds Brain in Dubai",
-            group_id="brain",
+            content="Alice builds Brain in London",
+            group_id="user-1",
             llm=llm,
             store=store,
         )
 
         assert result.entities_extracted == 3
         names = {e.name for e in store.entities}
-        assert "Dominic" in names
+        assert "Alice" in names
         assert "Brain" in names
 
     async def test_empty_entity_names_filtered(self):
@@ -267,7 +267,7 @@ class TestEntityExtraction:
         store = MockStore()
 
         result = await retain(
-            content="test", group_id="brain", llm=llm, store=store,
+            content="test", group_id="user-1", llm=llm, store=store,
         )
 
         # Only "Valid" should be extracted
@@ -283,17 +283,17 @@ class TestRelationExtraction:
         store = MockStore()
 
         result = await retain(
-            content="Dominic lives in Dubai",
-            group_id="brain",
+            content="Alice lives in London",
+            group_id="user-1",
             llm=llm,
             store=store,
         )
 
         if store.relations:
             rel = store.relations[0]
-            assert rel.source_entity_name == "Dominic"
-            assert rel.target_entity_name == "Dubai"
-            assert rel.fact == "Dominic lives in Dubai"
+            assert rel.source_entity_name == "Alice"
+            assert rel.target_entity_name == "London"
+            assert rel.fact == "Alice lives in London"
 
     async def test_relations_get_temporal_fields(self):
         from temporal.retain import retain
@@ -302,8 +302,8 @@ class TestRelationExtraction:
         store = MockStore()
 
         await retain(
-            content="Dominic lives in Dubai",
-            group_id="brain",
+            content="Alice lives in London",
+            group_id="user-1",
             llm=llm,
             store=store,
         )
@@ -323,8 +323,8 @@ class TestEmbeddings:
         llm = MockLLM()
 
         await retain(
-            content="Dominic builds Brain",
-            group_id="brain",
+            content="Alice builds Brain",
+            group_id="user-1",
             llm=llm,
             embedder=embedder,
             store=store,
@@ -339,8 +339,8 @@ class TestEmbeddings:
         llm = MockLLM()
 
         result = await retain(
-            content="Dominic builds Brain",
-            group_id="brain",
+            content="Alice builds Brain",
+            group_id="user-1",
             llm=llm,
             store=store,
         )
@@ -357,8 +357,8 @@ class TestProvenance:
         llm = MockLLM()
 
         result = await retain(
-            content="Dominic builds Brain",
-            group_id="brain",
+            content="Alice builds Brain",
+            group_id="user-1",
             llm=llm,
             store=store,
         )
@@ -367,7 +367,7 @@ class TestProvenance:
         assert len(store.links) >= 1
         for link in store.links:
             assert link.episode_id == result.episode_id
-            assert link.group_id == "brain"
+            assert link.group_id == "user-1"
 
 
 @pytest.mark.asyncio
@@ -378,8 +378,8 @@ class TestTokenUsage:
         llm = MockLLM()
 
         result = await retain(
-            content="Dominic builds Brain in Dubai",
-            group_id="brain",
+            content="Alice builds Brain in London",
+            group_id="user-1",
             llm=llm,
         )
 
@@ -398,16 +398,16 @@ class TestPriorContext:
 
         # First retain
         await retain(
-            content="Dominic founded GDA",
-            group_id="brain",
+            content="Alice founded GDA",
+            group_id="user-1",
             llm=llm,
             store=store,
         )
 
         # Second retain should have prior context
         await retain(
-            content="Dominic moved to Dubai",
-            group_id="brain",
+            content="Alice moved to London",
+            group_id="user-1",
             llm=llm,
             store=store,
         )

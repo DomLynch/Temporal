@@ -52,8 +52,8 @@ class E2ELLM:
         if "extract" in system_msg and "entit" in system_msg:
             return self._response(self._scenarios.get("entities", {
                 "entities": [
-                    {"name": "Dominic", "entity_type": "person", "summary": "Founder"},
-                    {"name": "Dubai", "entity_type": "location", "summary": "City"},
+                    {"name": "Alice", "entity_type": "person", "summary": "Founder"},
+                    {"name": "London", "entity_type": "location", "summary": "City"},
                 ]
             }))
 
@@ -62,10 +62,10 @@ class E2ELLM:
             return self._response(self._scenarios.get("relations", {
                 "relations": [
                     {
-                        "source": "Dominic",
-                        "target": "Dubai",
+                        "source": "Alice",
+                        "target": "London",
                         "relation_name": "lives_in",
-                        "fact": "Dominic lives in Dubai",
+                        "fact": "Alice lives in London",
                         "valid_at": "2022-01-01T00:00:00+00:00",
                     }
                 ]
@@ -237,8 +237,8 @@ class TestFullPipeline:
 
         # Retain an episode
         result = await retain(
-            content="Dominic lives in Dubai and builds AI systems.",
-            group_id="brain",
+            content="Alice lives in London and builds AI systems.",
+            group_id="user-1",
             source="telegram",
             llm=llm,
             embedder=embedder,
@@ -252,8 +252,8 @@ class TestFullPipeline:
 
         # Search should find retained content
         search_result = await search(
-            query="Dominic",
-            group_id="brain",
+            query="Alice",
+            group_id="user-1",
             store=store,
             embedder=embedder,
         )
@@ -270,8 +270,8 @@ class TestFullPipeline:
 
         # First retain
         await retain(
-            content="Dominic lives in Dubai",
-            group_id="brain",
+            content="Alice lives in London",
+            group_id="user-1",
             llm=llm,
             embedder=embedder,
             store=store,
@@ -302,7 +302,7 @@ class TestFullPipeline:
 
         await retain(
             content="Brain uses Qwen model for inference",
-            group_id="brain",
+            group_id="user-1",
             llm=llm2,
             embedder=embedder,
             store=store,
@@ -321,17 +321,17 @@ class TestEntityDedup:
         store = E2EStore()
         embedder = E2EEmbedder()
 
-        # First retain: Dominic entity
+        # First retain: Alice entity
         llm1 = E2ELLM(scenarios={
             "entities": {
-                "entities": [{"name": "Dominic", "entity_type": "person"}]
+                "entities": [{"name": "Alice", "entity_type": "person"}]
             },
             "relations": {"relations": []},
         })
 
         r1 = await retain(
-            content="Dominic is a founder",
-            group_id="brain",
+            content="Alice is a founder",
+            group_id="user-1",
             llm=llm1,
             embedder=embedder,
             store=store,
@@ -339,19 +339,19 @@ class TestEntityDedup:
 
         first_count = len(store.entities)
 
-        # Second retain: same Dominic entity
+        # Second retain: same Alice entity
         # LLM says "is_duplicate: true" when asked
         llm2 = E2ELLM(scenarios={
             "entities": {
-                "entities": [{"name": "Dominic", "entity_type": "person"}]
+                "entities": [{"name": "Alice", "entity_type": "person"}]
             },
             "relations": {"relations": []},
-            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Dominic"},
+            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Alice"},
         })
 
         r2 = await retain(
-            content="Dominic lives in Dubai",
-            group_id="brain",
+            content="Alice lives in London",
+            group_id="user-1",
             llm=llm2,
             embedder=embedder,
             store=store,
@@ -375,29 +375,29 @@ class TestTemporalSearch:
         # Add active and invalidated relations
         store.relations = [
             Relation(
-                id="r1", group_id="brain",
-                fact="Dominic lives in Dubai",
-                source_entity_name="Dominic", target_entity_name="Dubai",
+                id="r1", group_id="user-1",
+                fact="Alice lives in London",
+                source_entity_name="Alice", target_entity_name="London",
             ),
             Relation(
-                id="r2", group_id="brain",
-                fact="Dominic lives in London",
-                source_entity_name="Dominic", target_entity_name="London",
+                id="r2", group_id="user-1",
+                fact="Alice lives in London",
+                source_entity_name="Alice", target_entity_name="London",
                 invalid_at="2022-01-01T00:00:00+00:00",
             ),
         ]
 
         result = await search(
-            query="Dominic lives",
-            group_id="brain",
+            query="Alice lives",
+            group_id="user-1",
             store=store,
             embedder=embedder,
         )
 
         # Should only find the active relation
         active_facts = [r.relation.fact for r in result.results]
-        assert "Dominic lives in Dubai" in active_facts
-        assert "Dominic lives in London" not in active_facts
+        assert "Alice lives in London" in active_facts
+        assert "Alice lives in London" not in active_facts
 
     async def test_search_includes_invalidated_when_requested(self):
         """With include_invalidated, search returns historical facts."""
@@ -408,23 +408,23 @@ class TestTemporalSearch:
 
         store.relations = [
             Relation(
-                id="r1", group_id="brain",
-                fact="Dominic lives in Dubai",
+                id="r1", group_id="user-1",
+                fact="Alice lives in London",
             ),
             Relation(
-                id="r2", group_id="brain",
-                fact="Dominic lived in London",
+                id="r2", group_id="user-1",
+                fact="Alice lived in London",
                 invalid_at="2022-01-01T00:00:00+00:00",
             ),
         ]
 
         result = await search(
-            query="Dominic",
-            group_id="brain",
+            query="Alice",
+            group_id="user-1",
             store=store,
             embedder=embedder,
             filters=SearchFilters(
-                group_ids=["brain"],
+                group_ids=["user-1"],
                 include_invalidated=True,
             ),
         )
@@ -441,29 +441,29 @@ class TestTemporalSearch:
 
         store.relations = [
             Relation(
-                id="r1", group_id="brain",
-                fact="Dominic lived in London",
+                id="r1", group_id="user-1",
+                fact="Alice lived in London",
                 valid_at="2018-01-01T00:00:00+00:00",
             ),
             Relation(
-                id="r2", group_id="brain",
-                fact="Dominic lives in Dubai",
+                id="r2", group_id="user-1",
+                fact="Alice lives in London",
                 valid_at="2022-06-01T00:00:00+00:00",
             ),
             Relation(
-                id="r3", group_id="brain",
-                fact="Dominic plans to move",
+                id="r3", group_id="user-1",
+                fact="Alice plans to move",
                 valid_at="2027-01-01T00:00:00+00:00",
             ),
         ]
 
         result = await search(
-            query="Dominic",
-            group_id="brain",
+            query="Alice",
+            group_id="user-1",
             store=store,
             embedder=embedder,
             filters=SearchFilters(
-                group_ids=["brain"],
+                group_ids=["user-1"],
                 valid_at_start="2020-01-01T00:00:00+00:00",
                 valid_at_end="2025-01-01T00:00:00+00:00",
             ),
@@ -472,7 +472,7 @@ class TestTemporalSearch:
         # Only r2 falls within the window
         facts = [r.relation.fact for r in result.results]
         assert len(facts) == 1
-        assert "Dubai" in facts[0]
+        assert "London" in facts[0]
 
 
 @pytest.mark.asyncio
@@ -527,8 +527,8 @@ class TestProvenance:
         llm = E2ELLM()
 
         result = await retain(
-            content="Dominic builds Brain",
-            group_id="brain",
+            content="Alice builds Brain",
+            group_id="user-1",
             llm=llm,
             store=store,
         )
@@ -536,7 +536,7 @@ class TestProvenance:
         assert len(store.links) >= 1
         for link in store.links:
             assert link.episode_id == result.episode_id
-            assert link.group_id == "brain"
+            assert link.group_id == "user-1"
 
 
 @pytest.mark.asyncio
@@ -570,33 +570,33 @@ class TestContradictionInvalidation:
         # Pre-populate store with an existing relation
         existing = Relation(
             id="existing_r1",
-            group_id="brain",
+            group_id="user-1",
             source_entity_id="e1",
             target_entity_id="e2",
-            source_entity_name="Dominic",
+            source_entity_name="Alice",
             target_entity_name="London",
             name="lives_in",
-            fact="Dominic lives in London",
+            fact="Alice lives in London",
             valid_at="2018-01-01T00:00:00+00:00",
         )
         store.relations.append(existing)
-        store.entities.append(Entity(id="e1", group_id="brain", name="Dominic"))
-        store.entities.append(Entity(id="e2", group_id="brain", name="London"))
+        store.entities.append(Entity(id="e1", group_id="user-1", name="Alice"))
+        store.entities.append(Entity(id="e2", group_id="user-1", name="London"))
 
         # Retain new contradictory fact
         llm = E2ELLM(scenarios={
             "entities": {
                 "entities": [
-                    {"name": "Dominic", "entity_type": "person"},
-                    {"name": "Dubai", "entity_type": "location"},
+                    {"name": "Alice", "entity_type": "person"},
+                    {"name": "London", "entity_type": "location"},
                 ]
             },
             "relations": {
                 "relations": [{
-                    "source_entity_name": "Dominic",
-                    "target_entity_name": "Dubai",
+                    "source_entity_name": "Alice",
+                    "target_entity_name": "London",
                     "relation_name": "lives_in",
-                    "fact": "Dominic lives in Dubai",
+                    "fact": "Alice lives in London",
                     "valid_at": "2022-01-01T00:00:00+00:00",
                 }]
             },
@@ -608,8 +608,8 @@ class TestContradictionInvalidation:
         })
 
         result = await retain(
-            content="Dominic moved to Dubai in 2022",
-            group_id="brain",
+            content="Alice moved to London in 2022",
+            group_id="user-1",
             llm=llm,
             embedder=embedder,
             store=store,
@@ -617,9 +617,9 @@ class TestContradictionInvalidation:
 
         assert result.success
 
-        # The new Dubai relation should exist
-        dubai_relations = [r for r in store.relations if "Dubai" in r.fact and r.is_active]
-        assert len(dubai_relations) >= 1, "New Dubai relation should be active"
+        # The new London relation should exist
+        london_relations = [r for r in store.relations if "London" in r.fact and r.is_active]
+        assert len(london_relations) >= 1, "New London relation should be active"
 
         # The old London relation should have been invalidated
         london_relations = [r for r in store.relations if r.id == "existing_r1"]
@@ -648,8 +648,8 @@ class TestRelationProvenance:
         embedder = E2EEmbedder()
 
         result = await retain(
-            content="Dominic lives in Dubai",
-            group_id="brain",
+            content="Alice lives in London",
+            group_id="user-1",
             llm=llm,
             embedder=embedder,
             store=store,

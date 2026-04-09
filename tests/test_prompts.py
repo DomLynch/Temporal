@@ -27,24 +27,24 @@ class TestEntityExtractionPrompts:
     def test_message_prompt_structure(self):
         msgs = extract_entities_message({
             "previous_episodes": [{"content": "Previous chat"}],
-            "episode_content": "Dom: I'm building Brain in Dubai",
+            "episode_content": "Dom: I'm building Brain in London",
         })
         assert len(msgs) == 2
         assert msgs[0]["role"] == "system"
         assert msgs[1]["role"] == "user"
         assert "CURRENT MESSAGE" in msgs[1]["content"]
-        assert "Brain in Dubai" in msgs[1]["content"]
+        assert "Brain in London" in msgs[1]["content"]
 
     def test_text_prompt_structure(self):
         msgs = extract_entities_text({
-            "episode_content": "Dominic is the founder of Global Digital Assets.",
+            "episode_content": "Alice is the founder of Global Digital Assets.",
         })
         assert len(msgs) == 2
         assert "TEXT" in msgs[1]["content"]
 
     def test_json_prompt_structure(self):
         msgs = extract_entities_json({
-            "episode_content": '{"name": "Dominic", "role": "founder"}',
+            "episode_content": '{"name": "Alice", "role": "founder"}',
             "source_description": "User profile",
         })
         assert len(msgs) == 2
@@ -76,14 +76,14 @@ class TestRelationExtractionPrompt:
     def test_structure(self):
         msgs = extract_relations({
             "previous_episodes": [],
-            "episode_content": "Dominic founded Brain in Dubai",
-            "entities": [{"name": "Dominic"}, {"name": "Brain"}, {"name": "Dubai"}],
+            "episode_content": "Alice founded Brain in London",
+            "entities": [{"name": "Alice"}, {"name": "Brain"}, {"name": "London"}],
             "reference_time": "2026-03-22T10:00:00Z",
         })
         assert len(msgs) == 2
         assert "ENTITIES" in msgs[1]["content"]
         assert "REFERENCE TIME" in msgs[1]["content"]
-        assert "Dominic" in msgs[1]["content"]
+        assert "Alice" in msgs[1]["content"]
 
     def test_includes_temporal_rules(self):
         msgs = extract_relations({"entities": [], "episode_content": "test"})
@@ -98,7 +98,7 @@ class TestResolutionPrompts:
         msgs = resolve_entity_dedup({
             "episode_content": "Dom mentioned Brain",
             "new_entity": {"name": "Dom", "entity_type": "person"},
-            "existing_entities": [{"name": "Dominic Lynch", "entity_type": "person"}],
+            "existing_entities": [{"name": "Alice Chen", "entity_type": "person"}],
         })
         assert len(msgs) == 2
         assert "NEW ENTITY" in msgs[1]["content"]
@@ -106,9 +106,9 @@ class TestResolutionPrompts:
 
     def test_relation_dedup_structure(self):
         msgs = resolve_relation_dedup({
-            "existing_relations": [{"fact": "Dominic lives in Dubai", "idx": 0}],
+            "existing_relations": [{"fact": "Alice lives in London", "idx": 0}],
             "invalidation_candidates": [],
-            "new_relation": {"fact": "Dominic lives in London"},
+            "new_relation": {"fact": "Alice lives in London"},
         })
         assert len(msgs) == 2
         assert "EXISTING FACTS" in msgs[1]["content"]

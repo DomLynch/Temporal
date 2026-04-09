@@ -26,8 +26,8 @@ class TestParseJsonResponse:
         assert result == {"key": "value", "count": 3}
 
     def test_json_in_markdown(self):
-        result = _parse_json_response('```json\n{"entities": ["Dominic"]}\n```')
-        assert result == {"entities": ["Dominic"]}
+        result = _parse_json_response('```json\n{"entities": ["Alice"]}\n```')
+        assert result == {"entities": ["Alice"]}
 
     def test_json_in_markdown_no_lang(self):
         result = _parse_json_response('```\n{"data": true}\n```')
@@ -56,7 +56,7 @@ class TestParseJsonResponse:
 
     def test_think_tags_in_content(self):
         """Qwen models wrap output in <think>...</think> tags."""
-        content = '<think>Let me analyze this carefully...</think>{"entities": [{"name": "Dominic"}]}'
+        content = '<think>Let me analyze this carefully...</think>{"entities": [{"name": "Alice"}]}'
         result = _parse_json_response(content)
         # Note: _parse_json_response doesn't strip think tags — that's done in llm_extract
         # But the JSON extractor should find the JSON after the think block
@@ -89,12 +89,12 @@ class TestLLMExtract:
             async def complete(self, messages, temperature=0.0, max_tokens=4096,
                              response_format=None, tools=None):
                 return {
-                    "content": '{"entities": [{"name": "Dominic"}]}',
+                    "content": '{"entities": [{"name": "Alice"}]}',
                     "usage": {"input_tokens": 50, "output_tokens": 30, "total_tokens": 80},
                 }
 
         data, usage = await llm_extract(MockLLM(), [{"role": "user", "content": "test"}])
-        assert data["entities"][0]["name"] == "Dominic"
+        assert data["entities"][0]["name"] == "Alice"
         assert usage["total_tokens"] == 80
 
     async def test_think_tag_stripping(self):

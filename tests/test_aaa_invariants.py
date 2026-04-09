@@ -181,13 +181,13 @@ class TestDuplicateEntityMerge:
         store = InvariantStore()
         embedder = InvariantEmbedder()
 
-        # First retain: creates "Dominic" entity
+        # First retain: creates "Alice" entity
         llm1 = InvariantLLM(scenarios={
-            "entities": {"entities": [{"name": "Dominic", "entity_type": "person"}]},
+            "entities": {"entities": [{"name": "Alice", "entity_type": "person"}]},
             "relations": {"relations": []},
         })
 
-        r1 = await retain(content="Dominic is a founder", group_id="brain",
+        r1 = await retain(content="Alice is a founder", group_id="user-1",
                           llm=llm1, embedder=embedder, store=store)
 
         assert r1.entities_extracted == 1
@@ -196,12 +196,12 @@ class TestDuplicateEntityMerge:
 
         # Second retain: same entity, LLM says duplicate
         llm2 = InvariantLLM(scenarios={
-            "entities": {"entities": [{"name": "Dominic", "entity_type": "person"}]},
+            "entities": {"entities": [{"name": "Alice", "entity_type": "person"}]},
             "relations": {"relations": []},
-            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Dominic"},
+            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Alice"},
         })
 
-        r2 = await retain(content="Dominic lives in Dubai", group_id="brain",
+        r2 = await retain(content="Alice lives in London", group_id="user-1",
                           llm=llm2, embedder=embedder, store=store)
 
         # EXACT: entity count must be unchanged (canonical reused, not added)
@@ -231,19 +231,19 @@ class TestDuplicateRelationReuse:
         # First retain: creates relation
         llm1 = InvariantLLM(scenarios={
             "entities": {"entities": [
-                {"name": "Dominic", "entity_type": "person"},
-                {"name": "Dubai", "entity_type": "location"},
+                {"name": "Alice", "entity_type": "person"},
+                {"name": "London", "entity_type": "location"},
             ]},
             "relations": {"relations": [{
-                "source_entity_name": "Dominic",
-                "target_entity_name": "Dubai",
+                "source_entity_name": "Alice",
+                "target_entity_name": "London",
                 "relation_name": "lives_in",
-                "fact": "Dominic lives in Dubai",
+                "fact": "Alice lives in London",
                 "valid_at": "2022-01-01T00:00:00+00:00",
             }]},
         })
 
-        r1 = await retain(content="Dominic lives in Dubai", group_id="brain",
+        r1 = await retain(content="Alice lives in London", group_id="user-1",
                           llm=llm1, embedder=embedder, store=store)
 
         assert r1.relations_extracted >= 1
@@ -252,17 +252,17 @@ class TestDuplicateRelationReuse:
         # Second retain: same fact, LLM says duplicate
         llm2 = InvariantLLM(scenarios={
             "entities": {"entities": [
-                {"name": "Dominic", "entity_type": "person"},
-                {"name": "Dubai", "entity_type": "location"},
+                {"name": "Alice", "entity_type": "person"},
+                {"name": "London", "entity_type": "location"},
             ]},
             "relations": {"relations": [{
-                "source_entity_name": "Dominic",
-                "target_entity_name": "Dubai",
+                "source_entity_name": "Alice",
+                "target_entity_name": "London",
                 "relation_name": "lives_in",
-                "fact": "Dominic lives in Dubai",
+                "fact": "Alice lives in London",
                 "valid_at": "2022-01-01T00:00:00+00:00",
             }]},
-            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Dominic"},
+            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Alice"},
             "relation_dedup": {
                 "is_new": False,
                 "duplicate_indices": [0],
@@ -270,7 +270,7 @@ class TestDuplicateRelationReuse:
             },
         })
 
-        r2 = await retain(content="Dominic lives in Dubai again", group_id="brain",
+        r2 = await retain(content="Alice lives in London again", group_id="user-1",
                           llm=llm2, embedder=embedder, store=store)
 
         # EXACT: active relation count must be unchanged (canonical reused)
@@ -304,32 +304,32 @@ class TestContradictionInvariant:
         store = InvariantStore()
         embedder = InvariantEmbedder()
 
-        # Pre-populate: Dominic lives in London (old fact)
+        # Pre-populate: Alice lives in London (old fact)
         old_relation = Relation(
-            id="old_london", group_id="brain",
+            id="old_london", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            source_entity_name="Dominic", target_entity_name="London",
-            name="lives_in", fact="Dominic lives in London",
+            source_entity_name="Alice", target_entity_name="London",
+            name="lives_in", fact="Alice lives in London",
             valid_at="2018-01-01T00:00:00+00:00",
         )
         store.relations.append(old_relation)
-        store.entities.append(Entity(id="e1", group_id="brain", name="Dominic"))
-        store.entities.append(Entity(id="e2", group_id="brain", name="London"))
+        store.entities.append(Entity(id="e1", group_id="user-1", name="Alice"))
+        store.entities.append(Entity(id="e2", group_id="user-1", name="London"))
 
         # Retain: new contradictory fact
         llm = InvariantLLM(scenarios={
             "entities": {"entities": [
-                {"name": "Dominic", "entity_type": "person"},
-                {"name": "Dubai", "entity_type": "location"},
+                {"name": "Alice", "entity_type": "person"},
+                {"name": "London", "entity_type": "location"},
             ]},
             "relations": {"relations": [{
-                "source_entity_name": "Dominic",
-                "target_entity_name": "Dubai",
+                "source_entity_name": "Alice",
+                "target_entity_name": "London",
                 "relation_name": "lives_in",
-                "fact": "Dominic lives in Dubai",
+                "fact": "Alice lives in London",
                 "valid_at": "2022-01-01T00:00:00+00:00",
             }]},
-            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Dominic"},
+            "entity_dedup": {"is_duplicate": True, "duplicate_of": "Alice"},
             "relation_dedup": {
                 "is_new": True,
                 "duplicate_indices": [],
@@ -337,7 +337,7 @@ class TestContradictionInvariant:
             },
         })
 
-        result = await retain(content="Dominic moved to Dubai", group_id="brain",
+        result = await retain(content="Alice moved to London", group_id="user-1",
                               llm=llm, embedder=embedder, store=store)
 
         assert result.success
@@ -350,8 +350,8 @@ class TestContradictionInvariant:
         )
 
         # New relation should be active
-        dubai = [r for r in store.relations if "Dubai" in r.fact and r.is_active]
-        assert len(dubai) >= 1, "New Dubai relation should be active"
+        london = [r for r in store.relations if "London" in r.fact and r.is_active]
+        assert len(london) >= 1, "New London relation should be active"
 
         # EXACT: counter must reflect exactly 1 invalidation
         assert result.relations_invalidated == 1, (
@@ -424,39 +424,39 @@ class TestTimestampNormalization:
 
             # Save with Z format
             ep1 = Episode(
-                id="ep1", group_id="brain", name="test1", content="test",
+                id="ep1", group_id="user-1", name="test1", content="test",
                 reference_time="2025-06-01T12:00:00Z",
             )
             await store.save_episode(ep1)
 
             # Save with +00:00 format
             ep2 = Episode(
-                id="ep2", group_id="brain", name="test2", content="test",
+                id="ep2", group_id="user-1", name="test2", content="test",
                 reference_time="2025-06-02T12:00:00+00:00",
             )
             await store.save_episode(ep2)
 
             # Query with +00:00 format should find ep1 (saved with Z)
             recent = await store.get_recent_episodes(
-                "brain", limit=10, before="2025-06-02T00:00:00+00:00"
+                "user-1", limit=10, before="2025-06-02T00:00:00+00:00"
             )
             episode_ids = [e.id for e in recent]
             assert "ep1" in episode_ids, "Should find Z-formatted episode with +00:00 query"
 
             # Save relations with mixed formats
             r1 = Relation(
-                id="r1", group_id="brain", fact="Fact with Z",
+                id="r1", group_id="user-1", fact="Fact with Z",
                 valid_at="2025-01-01T00:00:00Z",
             )
             r2 = Relation(
-                id="r2", group_id="brain", fact="Fact with offset",
+                id="r2", group_id="user-1", fact="Fact with offset",
                 valid_at="2025-06-01T00:00:00+00:00",
             )
             await store.save_relations([r1, r2])
 
             # Filter should work correctly across formats
             active = await store.get_active_relations(
-                "brain",
+                "user-1",
                 SearchFilters(
                     valid_at_start="2025-03-01T00:00:00Z",
                     valid_at_end="2025-12-01T00:00:00+00:00",
@@ -480,19 +480,19 @@ class TestSearchSemantics:
         from temporal.search import _apply_temporal_filters
 
         active = SearchResult(
-            relation=Relation(id="r1", fact="Active fact", group_id="brain"),
+            relation=Relation(id="r1", fact="Active fact", group_id="user-1"),
             score=0.9,
         )
         invalidated = SearchResult(
             relation=Relation(
-                id="r2", fact="Old fact", group_id="brain",
+                id="r2", fact="Old fact", group_id="user-1",
                 invalid_at="2025-01-01T00:00:00+00:00",
             ),
             score=0.8,
         )
         expired = SearchResult(
             relation=Relation(
-                id="r3", fact="Expired fact", group_id="brain",
+                id="r3", fact="Expired fact", group_id="user-1",
                 expired_at="2025-01-01T00:00:00+00:00",
             ),
             score=0.7,
@@ -513,7 +513,7 @@ class TestSearchSemantics:
 
         invalidated = SearchResult(
             relation=Relation(
-                id="r1", fact="Old fact", group_id="brain",
+                id="r1", fact="Old fact", group_id="user-1",
                 invalid_at="2025-01-01T00:00:00+00:00",
                 valid_at="2020-01-01T00:00:00+00:00",
             ),

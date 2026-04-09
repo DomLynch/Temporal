@@ -100,7 +100,7 @@ class MockStore:
 
 def _episode(content="Test episode") -> Episode:
     return Episode(
-        id="ep_001", group_id="brain", content=content,
+        id="ep_001", group_id="user-1", content=content,
         episode_type=EpisodeType.MESSAGE,
     )
 
@@ -115,7 +115,7 @@ class TestEntityResolution:
         """No existing entities → treat as new."""
         from temporal.resolve import resolve_entities
 
-        entities = [Entity(id="e1", name="Dominic", group_id="brain")]
+        entities = [Entity(id="e1", name="Alice", group_id="user-1")]
         store = MockStore(entities=[])
 
         resolved, remap, usage = await resolve_entities(
@@ -130,10 +130,10 @@ class TestEntityResolution:
         """LLM identifies entity as duplicate of existing one."""
         from temporal.resolve import resolve_entities
 
-        existing = Entity(id="existing_1", name="Dominic Lynch", group_id="brain")
-        new = Entity(id="new_1", name="Dom", group_id="brain")
+        existing = Entity(id="existing_1", name="Alexandra Chen", group_id="user-1")
+        new = Entity(id="new_1", name="Alex", group_id="user-1")
 
-        llm = MockLLM({"is_duplicate": True, "duplicate_of": "Dominic Lynch", "best_name": "Dominic Lynch"})
+        llm = MockLLM({"is_duplicate": True, "duplicate_of": "Alexandra Chen", "best_name": "Alexandra Chen"})
         store = MockStore(entities=[existing])
 
         resolved, remap, usage = await resolve_entities(
@@ -148,10 +148,10 @@ class TestEntityResolution:
         """LLM says entities are different."""
         from temporal.resolve import resolve_entities
 
-        existing = Entity(id="existing_1", name="Dubai", group_id="brain", entity_type=EntityType.LOCATION)
-        new = Entity(id="new_1", name="Dominic", group_id="brain", entity_type=EntityType.PERSON)
+        existing = Entity(id="existing_1", name="London", group_id="user-1", entity_type=EntityType.LOCATION)
+        new = Entity(id="new_1", name="Alice", group_id="user-1", entity_type=EntityType.PERSON)
 
-        llm = MockLLM({"is_duplicate": False, "duplicate_of": "", "best_name": "Dominic"})
+        llm = MockLLM({"is_duplicate": False, "duplicate_of": "", "best_name": "Alice"})
         store = MockStore(entities=[existing])
 
         resolved, remap, usage = await resolve_entities(
@@ -166,10 +166,10 @@ class TestEntityResolution:
         """When entity is deduplicated, episode ID is added to existing entity."""
         from temporal.resolve import resolve_entities
 
-        existing = Entity(id="existing_1", name="Dominic", group_id="brain", episode_ids=["ep_old"])
-        new = Entity(id="new_1", name="Dom", group_id="brain")
+        existing = Entity(id="existing_1", name="Alexandra", group_id="user-1", episode_ids=["ep_old"])
+        new = Entity(id="new_1", name="Alex", group_id="user-1")
 
-        llm = MockLLM({"is_duplicate": True, "duplicate_of": "Dominic", "best_name": "Dominic"})
+        llm = MockLLM({"is_duplicate": True, "duplicate_of": "Alexandra", "best_name": "Alexandra"})
         store = MockStore(entities=[existing])
 
         resolved, _, _ = await resolve_entities(
@@ -183,7 +183,7 @@ class TestEntityResolution:
         """Embeddings are generated for new entities."""
         from temporal.resolve import resolve_entities
 
-        new = Entity(id="new_1", name="Test", group_id="brain")
+        new = Entity(id="new_1", name="Test", group_id="user-1")
         embedder = MockEmbedder()
         store = MockStore(entities=[])
 
@@ -198,8 +198,8 @@ class TestEntityResolution:
         from temporal.resolve import resolve_entities
 
         entities = [
-            Entity(id="e1", name="Dominic", group_id="brain"),
-            Entity(id="e2", name="Dubai", group_id="brain"),
+            Entity(id="e1", name="Alice", group_id="user-1"),
+            Entity(id="e2", name="London", group_id="user-1"),
         ]
 
         resolved, remap, usage = await resolve_entities(entities, _episode())
@@ -212,14 +212,14 @@ class TestEntityResolution:
         from temporal.resolve import resolve_entities
 
         entities = [
-            Entity(id="e1", name="", group_id="brain"),
-            Entity(id="e2", name="Dominic", group_id="brain"),
+            Entity(id="e1", name="", group_id="user-1"),
+            Entity(id="e2", name="Alice", group_id="user-1"),
         ]
 
         resolved, _, _ = await resolve_entities(entities, _episode(), store=MockStore())
 
         assert len(resolved) == 1
-        assert resolved[0].name == "Dominic"
+        assert resolved[0].name == "Alice"
 
 
 # ---------------------------------------------------------------------------
@@ -233,15 +233,15 @@ class TestRelationResolution:
         from temporal.resolve import resolve_relations
 
         existing = Relation(
-            id="r_existing", group_id="brain",
+            id="r_existing", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dominic lives in Dubai",
+            fact="Alice lives in London",
             episode_ids=["ep_old"],
         )
         new = Relation(
-            id="r_new", group_id="brain",
+            id="r_new", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dominic lives in Dubai",
+            fact="Alice lives in London",
         )
 
         store = MockStore(relations=[existing])
@@ -260,14 +260,14 @@ class TestRelationResolution:
         from temporal.resolve import resolve_relations
 
         existing = Relation(
-            id="r_existing", group_id="brain",
+            id="r_existing", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dominic resides in Dubai",
+            fact="Alice resides in London",
         )
         new = Relation(
-            id="r_new", group_id="brain",
+            id="r_new", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dom lives in Dubai",
+            fact="Dom lives in London",
         )
 
         llm = MockLLM({"duplicate_indices": [0], "contradicted_indices": [], "is_new": False})
@@ -285,15 +285,15 @@ class TestRelationResolution:
         from temporal.resolve import resolve_relations
 
         old = Relation(
-            id="r_old", group_id="brain",
+            id="r_old", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dominic lives in London",
+            fact="Alice lives in Paris",
             valid_at="2018-01-01T00:00:00+00:00",
         )
         new = Relation(
-            id="r_new", group_id="brain",
+            id="r_new", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dominic lives in Dubai",
+            fact="Alice lives in London",
             valid_at="2022-01-01T00:00:00+00:00",
         )
 
@@ -315,15 +315,15 @@ class TestRelationResolution:
         from temporal.resolve import resolve_relations
 
         existing_newer = Relation(
-            id="r_newer", group_id="brain",
+            id="r_newer", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dominic lives in Dubai",
+            fact="Alice lives in London",
             valid_at="2022-01-01T00:00:00+00:00",
         )
         new_older = Relation(
-            id="r_old_new", group_id="brain",
+            id="r_old_new", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dominic lives in London",
+            fact="Alice lives in Paris",
             valid_at="2018-01-01T00:00:00+00:00",
         )
 
@@ -341,8 +341,8 @@ class TestRelationResolution:
         """Identical relations in same batch are collapsed."""
         from temporal.resolve import resolve_relations
 
-        r1 = Relation(id="r1", source_entity_id="e1", target_entity_id="e2", fact="Same fact", group_id="brain")
-        r2 = Relation(id="r2", source_entity_id="e1", target_entity_id="e2", fact="Same fact", group_id="brain")
+        r1 = Relation(id="r1", source_entity_id="e1", target_entity_id="e2", fact="Same fact", group_id="user-1")
+        r2 = Relation(id="r2", source_entity_id="e1", target_entity_id="e2", fact="Same fact", group_id="user-1")
 
         resolved, _, _ = await resolve_relations([r1, r2], _episode())
 
@@ -353,8 +353,8 @@ class TestRelationResolution:
         from temporal.resolve import resolve_relations
 
         rels = [
-            Relation(id="r1", fact="Fact 1", group_id="brain"),
-            Relation(id="r2", fact="Fact 2", group_id="brain"),
+            Relation(id="r1", fact="Fact 1", group_id="user-1"),
+            Relation(id="r2", fact="Fact 2", group_id="user-1"),
         ]
 
         resolved, invalidated, usage = await resolve_relations(rels, _episode())
@@ -366,7 +366,7 @@ class TestRelationResolution:
         """New relations get episode ID added."""
         from temporal.resolve import resolve_relations
 
-        rel = Relation(id="r1", fact="New fact", group_id="brain")
+        rel = Relation(id="r1", fact="New fact", group_id="user-1")
 
         resolved, _, _ = await resolve_relations([rel], _episode())
 
@@ -377,7 +377,7 @@ class TestRelationResolution:
         from temporal.resolve import resolve_relations
 
         rel = Relation(
-            id="r1", group_id="brain",
+            id="r1", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
             fact="Brand new fact",
         )

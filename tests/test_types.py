@@ -59,13 +59,13 @@ class TestEpisode:
 
     def test_create_with_values(self):
         ep = Episode(
-            group_id="brain",
+            group_id="user-1",
             name="Chat with Dom",
             content="Hey, what's up?",
             source="telegram",
             episode_type=EpisodeType.MESSAGE,
         )
-        assert ep.group_id == "brain"
+        assert ep.group_id == "user-1"
         assert ep.content == "Hey, what's up?"
         assert ep.source == "telegram"
 
@@ -85,11 +85,11 @@ class TestEntity:
 
     def test_create_person(self):
         ent = Entity(
-            name="Dominic",
+            name="Alice",
             entity_type=EntityType.PERSON,
-            group_id="brain",
+            group_id="user-1",
         )
-        assert ent.name == "Dominic"
+        assert ent.name == "Alice"
         assert ent.entity_type == EntityType.PERSON
 
     def test_entity_types(self):
@@ -114,17 +114,17 @@ class TestRelation:
 
     def test_active_relation(self):
         rel = Relation(
-            source_entity_name="Dominic",
-            target_entity_name="Dubai",
+            source_entity_name="Alice",
+            target_entity_name="London",
             name="lives_in",
-            fact="Dominic lives in Dubai",
+            fact="Alice lives in London",
             valid_at="2022-01-01T00:00:00+00:00",
         )
         assert rel.is_active is True
 
     def test_invalidated_relation(self):
         rel = Relation(
-            fact="Dominic lives in London",
+            fact="Alice lives in London",
             valid_at="2018-01-01T00:00:00+00:00",
             invalid_at="2022-01-01T00:00:00+00:00",
         )
@@ -154,7 +154,7 @@ class TestEpisodicLink:
         link = EpisodicLink(
             episode_id="ep_1",
             entity_id="ent_1",
-            group_id="brain",
+            group_id="user-1",
         )
         assert link.episode_id == "ep_1"
         assert link.entity_id == "ent_1"
@@ -179,7 +179,7 @@ class TestSearchFilters:
         assert f.include_invalidated is True
 
     def test_partition_filter(self):
-        f = SearchFilters(group_ids=["brain", "personal"])
+        f = SearchFilters(group_ids=["user-1", "personal"])
         assert len(f.group_ids) == 2
 
 
