@@ -326,7 +326,7 @@ class TestPartitionIsolation:
 
         result = await search("Alice", "user-1", store=store)
 
-        # Should only find brain group results
+        # Should only find user-1 group results
         for r in result.results:
             assert r.relation.group_id == "user-1"
 

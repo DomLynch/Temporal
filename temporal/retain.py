@@ -65,7 +65,7 @@ async def retain(
 
     Args:
         content: The text to process (conversation, document, etc.)
-        group_id: Partition ID (e.g., "brain", "personal")
+        group_id: Partition ID (e.g., "user-1", "personal")
         name: Episode name/label
         source: Source identifier (e.g., "telegram", "whatsapp")
         episode_type: MESSAGE, TEXT, or JSON (affects extraction prompts)

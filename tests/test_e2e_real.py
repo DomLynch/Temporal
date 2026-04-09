@@ -231,7 +231,7 @@ async def main():
         # -------------------------------------------------------------------
         print("\n" + "=" * 60)
         print("ALL TESTS PASSED")
-        print(f"  Episodes: {len(await store.get_recent_episodes('brain', limit=100))}")
+        print(f"  Episodes: {len(await store.get_recent_episodes('user-1', limit=100))}")
         print(f"  Entities: {len(entities_after)}")
         print(f"  Relations: {len(all_relations)}")
         print("=" * 60)

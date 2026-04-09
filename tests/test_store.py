@@ -98,8 +98,8 @@ class TestEntities:
         await store.save_entity(Entity(id="e2", group_id="user-1", name="London"))
         await store.save_entity(Entity(id="e3", group_id="other", name="Other"))
 
-        brain_entities = await store.get_entities_by_group("user-1")
-        assert len(brain_entities) == 2
+        user1_entities = await store.get_entities_by_group("user-1")
+        assert len(user1_entities) == 2
 
     async def test_search_by_name(self, store):
         await store.save_entity(Entity(id="e1", group_id="user-1", name="Alice Chen"))
@@ -290,22 +290,22 @@ class TestPartitionIsolation:
         await store.save_entity(Entity(id="e1", group_id="user-1", name="Alice"))
         await store.save_entity(Entity(id="e2", group_id="personal", name="Alice"))
 
-        brain = await store.get_entities_by_group("user-1")
+        user1 = await store.get_entities_by_group("user-1")
         personal = await store.get_entities_by_group("personal")
-        assert len(brain) == 1
+        assert len(user1) == 1
         assert len(personal) == 1
 
     async def test_relations_isolated_by_group(self, store):
         await store.save_relation(Relation(id="r1", group_id="user-1", fact="Nexus fact"))
         await store.save_relation(Relation(id="r2", group_id="personal", fact="Personal fact"))
 
-        brain = await store.get_active_relations("user-1")
+        user1 = await store.get_active_relations("user-1")
         personal = await store.get_active_relations("personal")
-        assert len(brain) == 1
+        assert len(user1) == 1
         assert len(personal) == 1
 
     async def test_search_isolated_by_group(self, store):
-        await store.save_relation(Relation(id="r1", group_id="user-1", fact="Alice in brain"))
+        await store.save_relation(Relation(id="r1", group_id="user-1", fact="Alice in Nexus"))
         await store.save_relation(Relation(id="r2", group_id="other", fact="Alice in other"))
 
         results = await store.search_relations_by_text("user-1", "alice")
