@@ -27,13 +27,13 @@ class TestEntityExtractionPrompts:
     def test_message_prompt_structure(self):
         msgs = extract_entities_message({
             "previous_episodes": [{"content": "Previous chat"}],
-            "episode_content": "Dom: I'm building Brain in London",
+            "episode_content": "Alice: I'm building Nexus in London",
         })
         assert len(msgs) == 2
         assert msgs[0]["role"] == "system"
         assert msgs[1]["role"] == "user"
         assert "CURRENT MESSAGE" in msgs[1]["content"]
-        assert "Brain in London" in msgs[1]["content"]
+        assert "Nexus in London" in msgs[1]["content"]
 
     def test_text_prompt_structure(self):
         msgs = extract_entities_text({
@@ -76,8 +76,8 @@ class TestRelationExtractionPrompt:
     def test_structure(self):
         msgs = extract_relations({
             "previous_episodes": [],
-            "episode_content": "Alice founded Brain in London",
-            "entities": [{"name": "Alice"}, {"name": "Brain"}, {"name": "London"}],
+            "episode_content": "Alice founded Nexus in London",
+            "entities": [{"name": "Alice"}, {"name": "Nexus"}, {"name": "London"}],
             "reference_time": "2026-03-22T10:00:00Z",
         })
         assert len(msgs) == 2
@@ -96,8 +96,8 @@ class TestRelationExtractionPrompt:
 class TestResolutionPrompts:
     def test_entity_dedup_structure(self):
         msgs = resolve_entity_dedup({
-            "episode_content": "Dom mentioned Brain",
-            "new_entity": {"name": "Dom", "entity_type": "person"},
+            "episode_content": "Alice mentioned Nexus",
+            "new_entity": {"name": "Alice", "entity_type": "person"},
             "existing_entities": [{"name": "Alice Chen", "entity_type": "person"}],
         })
         assert len(msgs) == 2

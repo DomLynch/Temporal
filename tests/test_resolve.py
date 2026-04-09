@@ -267,7 +267,7 @@ class TestRelationResolution:
         new = Relation(
             id="r_new", group_id="user-1",
             source_entity_id="e1", target_entity_id="e2",
-            fact="Dom lives in London",
+            fact="Alice lives in Paris",
         )
 
         llm = MockLLM({"duplicate_indices": [0], "contradicted_indices": [], "is_new": False})

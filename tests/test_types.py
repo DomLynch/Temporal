@@ -60,7 +60,7 @@ class TestEpisode:
     def test_create_with_values(self):
         ep = Episode(
             group_id="user-1",
-            name="Chat with Dom",
+            name="Chat with Alice",
             content="Hey, what's up?",
             source="telegram",
             episode_type=EpisodeType.MESSAGE,

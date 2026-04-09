@@ -236,14 +236,14 @@ class TestEntityExtraction:
         llm = MockLLM(entity_response={
             "entities": [
                 {"name": "Alice", "entity_type": "person"},
-                {"name": "Brain", "entity_type": "concept"},
+                {"name": "Nexus", "entity_type": "concept"},
                 {"name": "London", "entity_type": "location"},
             ]
         })
         store = MockStore()
 
         result = await retain(
-            content="Alice builds Brain in London",
+            content="Alice builds Nexus in London",
             group_id="user-1",
             llm=llm,
             store=store,
@@ -252,7 +252,7 @@ class TestEntityExtraction:
         assert result.entities_extracted == 3
         names = {e.name for e in store.entities}
         assert "Alice" in names
-        assert "Brain" in names
+        assert "Nexus" in names
 
     async def test_empty_entity_names_filtered(self):
         from temporal.retain import retain
@@ -323,7 +323,7 @@ class TestEmbeddings:
         llm = MockLLM()
 
         await retain(
-            content="Alice builds Brain",
+            content="Alice builds Nexus",
             group_id="user-1",
             llm=llm,
             embedder=embedder,
@@ -339,7 +339,7 @@ class TestEmbeddings:
         llm = MockLLM()
 
         result = await retain(
-            content="Alice builds Brain",
+            content="Alice builds Nexus",
             group_id="user-1",
             llm=llm,
             store=store,
@@ -357,7 +357,7 @@ class TestProvenance:
         llm = MockLLM()
 
         result = await retain(
-            content="Alice builds Brain",
+            content="Alice builds Nexus",
             group_id="user-1",
             llm=llm,
             store=store,
@@ -378,7 +378,7 @@ class TestTokenUsage:
         llm = MockLLM()
 
         result = await retain(
-            content="Alice builds Brain in London",
+            content="Alice builds Nexus in London",
             group_id="user-1",
             llm=llm,
         )

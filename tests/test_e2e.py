@@ -283,17 +283,17 @@ class TestFullPipeline:
         llm2 = E2ELLM(scenarios={
             "entities": {
                 "entities": [
-                    {"name": "Brain", "entity_type": "concept"},
+                    {"name": "Nexus", "entity_type": "concept"},
                     {"name": "Qwen", "entity_type": "concept"},
                 ]
             },
             "relations": {
                 "relations": [
                     {
-                        "source": "Brain",
+                        "source": "Nexus",
                         "target": "Qwen",
                         "relation_name": "uses",
-                        "fact": "Brain uses Qwen model",
+                        "fact": "Nexus uses Qwen model",
                         "valid_at": "2026-03-20T00:00:00+00:00",
                     }
                 ]
@@ -301,7 +301,7 @@ class TestFullPipeline:
         })
 
         await retain(
-            content="Brain uses Qwen model for inference",
+            content="Nexus uses Qwen model for inference",
             group_id="user-1",
             llm=llm2,
             embedder=embedder,
@@ -376,13 +376,13 @@ class TestTemporalSearch:
         store.relations = [
             Relation(
                 id="r1", group_id="user-1",
-                fact="Alice lives in London",
-                source_entity_name="Alice", target_entity_name="London",
+                fact="Alice lives in Berlin",
+                source_entity_name="Alice", target_entity_name="Berlin",
             ),
             Relation(
                 id="r2", group_id="user-1",
-                fact="Alice lives in London",
-                source_entity_name="Alice", target_entity_name="London",
+                fact="Alice lives in Paris",
+                source_entity_name="Alice", target_entity_name="Paris",
                 invalid_at="2022-01-01T00:00:00+00:00",
             ),
         ]
@@ -396,8 +396,8 @@ class TestTemporalSearch:
 
         # Should only find the active relation
         active_facts = [r.relation.fact for r in result.results]
-        assert "Alice lives in London" in active_facts
-        assert "Alice lives in London" not in active_facts
+        assert "Alice lives in Berlin" in active_facts
+        assert "Alice lives in Paris" not in active_facts
 
     async def test_search_includes_invalidated_when_requested(self):
         """With include_invalidated, search returns historical facts."""
@@ -527,7 +527,7 @@ class TestProvenance:
         llm = E2ELLM()
 
         result = await retain(
-            content="Alice builds Brain",
+            content="Alice builds Nexus",
             group_id="user-1",
             llm=llm,
             store=store,

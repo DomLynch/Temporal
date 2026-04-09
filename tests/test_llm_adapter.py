@@ -51,8 +51,8 @@ class TestParseJsonResponse:
         assert _parse_json_response("This is not JSON at all") == {}
 
     def test_nested_json(self):
-        result = _parse_json_response('{"entities": [{"name": "Dom", "type": "person"}]}')
-        assert result["entities"][0]["name"] == "Dom"
+        result = _parse_json_response('{"entities": [{"name": "Alice", "type": "person"}]}')
+        assert result["entities"][0]["name"] == "Alice"
 
     def test_think_tags_in_content(self):
         """Qwen models wrap output in <think>...</think> tags."""

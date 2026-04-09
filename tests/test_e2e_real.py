@@ -121,7 +121,7 @@ async def main():
         r1 = await retain(
             content=(
                 "Alice is a tech founder based in London. He is building "
-                "a cognitive AI system called Brain. He previously lived in "
+                "a cognitive AI system called Nexus. He previously lived in "
                 "London before moving to London in 2022."
             ),
             group_id="user-1",
@@ -193,7 +193,7 @@ async def main():
         r2 = await retain(
             content=(
                 "Alice is also pursuing a part-time PhD while managing "
-                "Brain development. He works 12 hours a day."
+                "Nexus development. He works 12 hours a day."
             ),
             group_id="user-1",
             source="test",

@@ -94,7 +94,7 @@ class TestEntities:
         assert loaded.entity_type == EntityType.PERSON
 
     async def test_get_entities_by_group(self, store):
-        await store.save_entity(Entity(id="e1", group_id="user-1", name="Dom"))
+        await store.save_entity(Entity(id="e1", group_id="user-1", name="Alice"))
         await store.save_entity(Entity(id="e2", group_id="user-1", name="London"))
         await store.save_entity(Entity(id="e3", group_id="other", name="Other"))
 
@@ -287,8 +287,8 @@ class TestTemporalFiltering:
 @pytest.mark.asyncio
 class TestPartitionIsolation:
     async def test_entities_isolated_by_group(self, store):
-        await store.save_entity(Entity(id="e1", group_id="user-1", name="Dom"))
-        await store.save_entity(Entity(id="e2", group_id="personal", name="Dom"))
+        await store.save_entity(Entity(id="e1", group_id="user-1", name="Alice"))
+        await store.save_entity(Entity(id="e2", group_id="personal", name="Alice"))
 
         brain = await store.get_entities_by_group("user-1")
         personal = await store.get_entities_by_group("personal")
@@ -296,7 +296,7 @@ class TestPartitionIsolation:
         assert len(personal) == 1
 
     async def test_relations_isolated_by_group(self, store):
-        await store.save_relation(Relation(id="r1", group_id="user-1", fact="Brain fact"))
+        await store.save_relation(Relation(id="r1", group_id="user-1", fact="Nexus fact"))
         await store.save_relation(Relation(id="r2", group_id="personal", fact="Personal fact"))
 
         brain = await store.get_active_relations("user-1")
@@ -340,7 +340,7 @@ class TestVectorSearch:
             fact_embedding=[1.0, 0.0, 0.0],
         ))
         await store.save_relation(Relation(
-            id="r2", group_id="user-1", fact="Brain uses Qwen model",
+            id="r2", group_id="user-1", fact="Nexus uses Qwen model",
             fact_embedding=[0.0, 1.0, 0.0],
         ))
 
@@ -376,7 +376,7 @@ class TestRoundTrip:
     async def test_full_lifecycle(self, store):
         """Episode → Entity → Relation → Invalidate → Search."""
         # Create episode
-        ep = Episode(id="ep1", group_id="user-1", content="Dom moved to London in 2022")
+        ep = Episode(id="ep1", group_id="user-1", content="Alice moved to London in 2022")
         await store.save_episode(ep)
 
         # Create entities
@@ -406,7 +406,7 @@ class TestRoundTrip:
         assert len(active) == 1
 
         # New episode contradicts
-        ep2 = Episode(id="ep2", group_id="user-1", content="Dom moved to London")
+        ep2 = Episode(id="ep2", group_id="user-1", content="Alice moved to London")
         await store.save_episode(ep2)
 
         # Invalidate old relation

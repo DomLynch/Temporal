@@ -100,7 +100,7 @@ class TestSearch:
 
         store = MockStore(relations=[
             _rel("r1", "Alice lives in London"),
-            _rel("r2", "Brain uses Qwen model"),
+            _rel("r2", "Nexus uses Qwen model"),
             _rel("r3", "Alice founded GDA"),
         ])
 
@@ -128,7 +128,7 @@ class TestSearch:
         entity = _entity("e1", "Alice")
         relations = [
             _rel("r1", "Alice lives in London", source_entity_id="e1", target_entity_id="e2"),
-            _rel("r2", "Brain uses Qwen", source_entity_id="e3", target_entity_id="e4"),
+            _rel("r2", "Nexus uses Qwen", source_entity_id="e3", target_entity_id="e4"),
         ]
 
         store = MockStore(relations=relations, entities=[entity])
@@ -278,13 +278,13 @@ class TestTemporalFiltering:
         from temporal.search import _apply_temporal_filters
 
         r1 = SearchResult(
-            relation=_rel("r1", "Fact about Dom",
+            relation=_rel("r1", "Fact about Alice",
                           source_entity_name="Alice", target_entity_name="London"),
             score=0.9,
         )
         r2 = SearchResult(
-            relation=_rel("r2", "Fact about Brain",
-                          source_entity_name="Brain", target_entity_name="Qwen"),
+            relation=_rel("r2", "Fact about Nexus",
+                          source_entity_name="Nexus", target_entity_name="Qwen"),
             score=0.8,
         )
 
