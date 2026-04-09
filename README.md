@@ -26,6 +26,26 @@ No Neo4j. No graph database. No Docker. Just SQLite.
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart LR
+    E["Episode / document / message"] --> R["retain()"]
+    R --> X["LLM extraction"]
+    X --> N["Entities"]
+    X --> L["Relations"]
+    N --> Q["Resolution engine"]
+    L --> Q
+    Q --> S["SQLiteTemporalStore"]
+    S --> H["search()"]
+    V["Embedder"] --> H
+    H --> O["Time-aware results"]
+```
+
+Temporal keeps one job: ingest facts, resolve canonical entities and relations, then return what is true now or what was true at a point in time.
+
+---
+
 ## Size comparison
 
 | Component | Graphiti | Temporal | Reduction |
