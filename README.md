@@ -315,3 +315,5 @@ Apache 2.0. See [LICENSE](LICENSE).
 ## Acknowledgments
 
 The temporal knowledge graph design, entity resolution logic, and valid_at/invalid_at model come from [Graphiti](https://github.com/getzep/graphiti) by Zep AI (Apache 2.0). Temporal is an independent extraction — not affiliated with Zep.
+
+Extracted from Graphiti at commit `3630e34`. Not tracking upstream — this is a stable snapshot, not a rolling fork.
